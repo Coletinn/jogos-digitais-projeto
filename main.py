@@ -1,5 +1,6 @@
 import pygame
 import sys
+import time
 
 pygame.init()
 
@@ -24,7 +25,7 @@ titulo = fonte_titulo.render("Sobrevivência ao Tsunami", True, amarelo)
 retangulo_titulo = titulo.get_rect()
 retangulo_titulo.center = (largura // 2, altura // 13)
 
-texto1 = fonte_texto.render("Seja bem vindo!", True, amarelo)
+texto1 = fonte_texto.render("Seja bem-vindo!", True, amarelo)
 texto2 = fonte_texto.render("Neste jogo você irá aprender", True, amarelo)
 texto3 = fonte_texto.render("a sobreviver a um tsunami!", True, amarelo)
 retangulo_texto1 = texto1.get_rect()
@@ -37,6 +38,7 @@ retangulo_texto3.topright = (largura - 250, 130)
 
 pygame.mixer.music.load("san-andreas-music.mp3")
 pygame.mixer.music.play(-1)
+som_game_over = pygame.mixer.Sound("game-over.mp3")
 
 som_ligado = True
 
@@ -56,6 +58,13 @@ cor_botao_instrucoes = (0, 0, 0)
 
 botao_som = pygame.Rect(largura - 475, altura - 220, 150, 50)
 
+mostrar_texto_instrucoes = True
+
+# Adicionando o botão "Correr"
+botao_correr = pygame.Rect(largura // 2 - 100, altura // 2 + 70, 200, 50)
+cor_botao_correr = (0, 0, 0)
+mostrar_botao_correr = False
+
 imagem_tsunami = None
 mostrar_imagem_tsunami = False
 mostrar_caixa_instrucoes = False
@@ -69,20 +78,48 @@ texto_instrucoes = [
     "4. Boa sorte e divirta-se!",
 ]
 
+# Variáveis de pontuação
+pontuacao = 0
+temporizador = 0
+tempo_entre_colisoes = 1000  # Tempo mínimo entre detecções de colisão em milissegundos
+temporizador_colisao_cj = 0
+temporizador_colisao_bigsmoke = 0
+
+# Variável de velocidade horizontal para as ondas
+velocidade_onda = 0.6
+
+# Nova variável para controlar a exibição do texto de instruções após clicar em "Jogar"
+mostrar_texto_instrucoes = True
+
 class Personagem(pygame.sprite.Sprite):
-    def __init__(self, imagem, x, y, escala=1):
+    def __init__(self, imagem, x, y, escala=1, tipo=None):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.image.load(imagem)
+        self.original_image = self.image
         self.image = pygame.transform.scale(self.image, (int(self.image.get_width() * escala), int(self.image.get_height() * escala)))
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
+        self.inclinacao = 0
+        self.escala_original = escala
+        self.velocidade_horizontal = 0
+        self.tipo = tipo
+
+    def inclinar(self, angulo):
+        self.inclinacao = angulo
+        self.image = pygame.transform.rotate(self.original_image, self.inclinacao)
+        self.rect = self.image.get_rect(center=self.rect.center)
 
 escala_cj = 0.3
 escala_bigsmoke = 0.3
-personagem_cj = Personagem("cj.png", largura // 3, altura // 1.3, escala_cj)
-personagem_bigsmoke = Personagem("bigsmoke.png", largura * 3 // 4, altura // 1.3, escala_bigsmoke)
+personagem_cj = Personagem("cj.png", largura // 3, altura // 1.3, escala_cj, tipo="CJ")
+personagem_bigsmoke = Personagem("bigsmoke.png", largura * 3 // 4, altura // 1.3, escala_bigsmoke, tipo='Big Smoke')
 
 personagens = pygame.sprite.Group(personagem_cj, personagem_bigsmoke)
+
+# Adiciona um sprite de areia à tela
+sprite_areia = Personagem("areia.png", largura // 4, altura // 1.1, escala=0.4)
+
+tempo_inicial = None
 
 executando = True
 while executando:
@@ -91,17 +128,99 @@ while executando:
             executando = False
         if event.type == pygame.MOUSEBUTTONDOWN:
             if botao_iniciar.collidepoint(event.pos):
-                imagem_tsunami = pygame.image.load("rio-beach.png")
+                tempo_inicial = time.time()
+                imagem_tsunami = pygame.image.load("fundo.png")
                 imagem_tsunami = pygame.transform.scale(imagem_tsunami, (largura, altura))
                 mostrar_imagem_tsunami = True
                 mostrar_caixa_instrucoes = False
-                fechar_instrucoes = False 
+                fechar_instrucoes = False
+
+                # Adiciona um sprite de areia à tela
+                personagens.add(sprite_areia)
+
+                # Adiciona três sprites de onda à tela
+                onda2 = Personagem("tsunami.png", largura // 0.8, altura // 1.3, escala=0.30)
+                onda3 = Personagem("tsunami.png", largura * 4 // 4, altura // 1.3, escala=0.20)
+
+                # Adiciona as ondas ao grupo de personagens
+                personagens.add(onda2, onda3)
+
+                # Define a velocidade horizontal para as ondas
+                onda2.velocidade_horizontal = -velocidade_onda
+                onda3.velocidade_horizontal = -velocidade_onda
+
+                # Move os personagens para a esquerda e inclina o cj
+                personagem_cj.rect.x -= 200
+                personagem_cj.rect.y += 12
+
+                personagem_bigsmoke.rect.x -= 350
+                personagem_bigsmoke.rect.y += 12
+
+                # Mostra o botão "Correr"
+                mostrar_botao_correr = True
+
+                # Mostra a mensagem e o botão "OK"
+                mostrar_mensagem = True
+                mensagem_texto = "Bem-vindo! Você está prestes a enfrentar um tsunami. Boa sorte!"
+
             elif botao_instrucoes.collidepoint(event.pos):
                 mostrar_caixa_instrucoes = True
             elif botao_som.collidepoint(event.pos):
                 alternar_som()
             elif fechar_instrucoes and botao_fechar_instrucoes.collidepoint(event.pos):
                 mostrar_caixa_instrucoes = False
+            elif mostrar_botao_correr and botao_correr.collidepoint(event.pos):
+                print("Correndo!")
+                
+
+    # Tratamento do evento de pressionar tecla
+    keys = pygame.key.get_pressed()
+
+    # Verificar se o jogo está em andamento (após clicar no botão "Jogar")
+    if mostrar_imagem_tsunami:
+        # Verificar se a pontuação não atingiu 94
+        if pontuacao < 94:
+            if keys[pygame.K_LEFT]:
+                # Mover os personagens para a esquerda apenas se a pontuação for menor que 94
+                personagem_cj.rect.x -= 3
+                personagem_bigsmoke.rect.x -= 3
+                # Aumentar a pontuação a cada movimento para a esquerda apenas se a pontuação for menor que 94
+                pontuacao += 1
+
+            # Atualizar a posição horizontal das ondas
+            for onda in personagens.sprites():
+                if isinstance(onda, Personagem) and onda != sprite_areia:
+                    onda.rect.x += onda.velocidade_horizontal
+
+             # Calcular o tempo decorrido
+            tempo_decorrido = time.time() - tempo_inicial
+
+            # Verificar se o tempo decorrido ultrapassou 6 segundos
+            if tempo_inicial is not None and tempo_decorrido > 8:
+                # Desligar a música atual
+                pygame.mixer.music.stop()
+
+                # Reproduzir o som de "Game Over"
+                som_game_over.play()
+
+                # Mostrar a tela de Game Over
+                tela.fill((0, 0, 0))
+                fonte_game_over = pygame.font.SysFont("georgia", 50)
+                texto_game_over = fonte_game_over.render("Game Over!", True, (255, 0, 0))
+                retangulo_game_over = texto_game_over.get_rect(center=(largura // 2, altura // 2))
+                tela.blit(texto_game_over, retangulo_game_over)
+
+                # Adicionar a mensagem abaixo do texto "Game Over"
+                fonte_mensagem_game_over = pygame.font.SysFont("georgia", 25)
+                mensagem_game_over = fonte_mensagem_game_over.render("CJ e Big Smoke não correram do tsunami a tempo!", True, (255, 0, 0))
+                retangulo_mensagem_game_over = mensagem_game_over.get_rect(center=(largura // 2, altura // 1.7))
+                tela.blit(mensagem_game_over, retangulo_mensagem_game_over)
+                pygame.display.flip()
+
+                # Aguardar por alguns segundos antes de encerrar o jogo
+                time.sleep(5)
+                executando = False
+                        
 
     tela.blit(imagem_fundo, (0, 0))
 
@@ -150,6 +269,19 @@ while executando:
         retangulo_botao_fechar_instrucoes = texto_botao_fechar_instrucoes.get_rect(center=botao_fechar_instrucoes.center)
         tela.blit(texto_botao_fechar_instrucoes, retangulo_botao_fechar_instrucoes)
         fechar_instrucoes = True
+
+    # Exibir pontuação apenas após clicar em "Jogar"
+    if mostrar_imagem_tsunami:
+        fonte_pontuacao = pygame.font.SysFont("georgia", 30)
+        texto_pontuacao = fonte_pontuacao.render(f"Pontuação: {pontuacao}", True, (255, 255, 255))
+        tela.blit(texto_pontuacao, (20, 20))
+
+    # Verificar se a pontuação atingiu 94
+    if pontuacao >= 94:
+        fonte_mensagem = pygame.font.SysFont("georgia", 35)
+        mensagem = fonte_mensagem.render("VOCE CONSEGUIU CORRER DO TSUNAMI!", True, (255, 255, 0))
+        retangulo_mensagem = mensagem.get_rect(center=(largura // 2, 95))
+        tela.blit(mensagem, retangulo_mensagem)
 
     pygame.display.flip()
 
