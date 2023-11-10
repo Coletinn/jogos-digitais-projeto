@@ -55,7 +55,9 @@ botao_iniciar = pygame.Rect(largura // 2 - 100, altura // 2 + 10, 200, 50)
 cor_botao = (0, 0, 0)
 
 botao_instrucoes = pygame.Rect(largura // 2 - 100, altura // 2 - 70, 200, 50)
-cor_botao_instrucoes = (0, 0, 0) 
+cor_botao_instrucoes = (0, 0, 0)
+botao_teste = pygame.Rect(largura // 3 - 100, altura // 1.2, 450, 50)
+cor_botao_teste = (0, 0, 0) 
 
 botao_som = pygame.Rect(largura - 475, altura - 220, 150, 50)
 
@@ -88,6 +90,25 @@ velocidade_onda = 0.6
 
 mostrar_texto_instrucoes = True
 
+class Helicoptero(pygame.sprite.Sprite):
+    def __init__(self, imagem, x, y, escala=1):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.image.load(imagem)
+        self.original_image = self.image
+        self.image = pygame.transform.scale(self.image, (int(self.image.get_width() * escala), int(self.image.get_height() * escala)))
+        self.rect = self.image.get_rect()
+        self.rect.center = (x, y)
+
+
+class Casa(pygame.sprite.Sprite):
+    def __init__(self, imagem, x, y, escala=1):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.image.load(imagem)
+        self.original_image = self.image
+        self.image = pygame.transform.scale(self.image, (int(self.image.get_width() * escala), int(self.image.get_height() * escala)))
+        self.rect = self.image.get_rect()
+        self.rect.center = (x, y)
+
 class Personagem(pygame.sprite.Sprite):
     def __init__(self, imagem, x, y, escala=1, tipo=None):
         pygame.sprite.Sprite.__init__(self)
@@ -110,14 +131,19 @@ escala_cj = 0.3
 escala_bigsmoke = 0.3
 personagem_cj = Personagem("cj.png", largura // 3, altura // 1.3, escala_cj, tipo="CJ")
 personagem_bigsmoke = Personagem("bigsmoke.png", largura * 3 // 4, altura // 1.3, escala_bigsmoke, tipo='Big Smoke')
+helicoptero_sprite = Helicoptero("helicopter.png", largura // 3, altura // 1.3, 0.3)
+cj_resgatado = False
+big_smoke_resgatado = False
 
 personagens = pygame.sprite.Group(personagem_cj, personagem_bigsmoke)
 
 sprite_areia = Personagem("areia.png", largura // 4, altura // 1.1, escala=0.4)
 
 tempo_inicial = None
+display_victory_message = False
 
 som_vitoria_count = 0
+next_level = False
 
 executando = True
 while executando:
@@ -159,7 +185,18 @@ while executando:
                 mostrar_caixa_instrucoes = False
             elif mostrar_botao_correr and botao_correr.collidepoint(event.pos):
                 print("Correndo!")
-                
+
+            elif botao_teste.collidepoint(event.pos):
+                next_level = True
+
+            elif next_level:  # If the next level is triggered
+                tela.fill((0, 0, 0))  # Fill the screen with black
+                pygame.display.flip()
+
+            if next_level:  # Assuming next_level is True during the helicopter scene
+                if helicoptero_sprite.rect.collidepoint(event.pos):
+                    pontuacao += 100
+                    display_victory_message = True
 
     keys = pygame.key.get_pressed()
 
@@ -195,6 +232,11 @@ while executando:
 
                 time.sleep(5)
                 executando = False
+
+        
+    if next_level:
+        if keys[pygame.K_LEFT]:
+            helicoptero_sprite
                         
 
     tela.blit(imagem_fundo, (0, 0))
@@ -263,10 +305,49 @@ while executando:
     if pontuacao >= 94:
         pygame.mixer.music.stop()
         som_vitoria.play()
+
         fonte_mensagem = pygame.font.SysFont("georgia", 35)
         mensagem = fonte_mensagem.render("VOCE CONSEGUIU CORRER DO TSUNAMI!", True, (255, 255, 0))
         retangulo_mensagem = mensagem.get_rect(center=(largura // 2, 95))
         tela.blit(mensagem, retangulo_mensagem)
+
+        pygame.draw.rect(tela, cor_botao_teste, botao_teste)
+        fonte_botao_teste = pygame.font.SysFont("georgia", 30)
+        texto_botao_teste = fonte_botao_teste.render("IR PARA PRÓXIMO NÍVEL", True, (255, 255, 0))
+        retangulo_botao_teste = texto_botao_teste.get_rect(center=botao_teste.center)
+        tela.blit(texto_botao_teste, retangulo_botao_teste)
+
+        if next_level:
+            som_vitoria.stop()
+            tela.fill((0, 191, 255))
+            # Create sprites for CJ and Big Smoke
+            cj_next_level = Personagem("cj.png", largura // 3, altura // 1.25, escala_cj, tipo="CJ")
+            big_smoke_next_level = Personagem("bigsmoke.png", largura * 3 // 8, altura // 1.25, escala_bigsmoke, tipo='Big Smoke')
+            helicoptero_sprite = Helicoptero("helicopter.png", largura // 9, altura // 1.2, escala=0.3)
+            personagens.add(helicoptero_sprite, cj_next_level, big_smoke_next_level)
+            personagens.draw(tela)
+            fonte_mensagem_proxnivel = pygame.font.SysFont("georgia", 25)
+            mensagem_proxnivel = fonte_mensagem_proxnivel.render("Clique no helicóptero para subir e fugir do tsunami!", True, (255, 255, 0))
+            retangulo_mensagem_proxnivel = mensagem_proxnivel.get_rect(center=(largura // 2, altura // 5 ))
+            tela.blit(mensagem_proxnivel, retangulo_mensagem_proxnivel)
+
+        
+    if display_victory_message:
+        tela.fill((0, 0, 0))
+        fonte_mensagem_vitoria = pygame.font.SysFont("georgia", 30)
+        fonte_msg_gameover = pygame.font.SysFont("georgia", 50)
+        mensagem_go = fonte_msg_gameover.render("GAME OVER", True, (0, 255, 0))
+        mensagem_vitoria1 = fonte_mensagem_vitoria.render("VITÓRIA!!!", True, (255, 255, 255))
+        mensagem_vitoria2 = fonte_mensagem_vitoria.render("VOCÊ VOOU COM O HELICÓPTERO E FUGIU!!!", True, (255, 255, 255))
+        mensagem_pontuacao = fonte_mensagem_vitoria.render(f"Pontuação final: {pontuacao}", True, (255, 255, 255))
+        retangulo_mensagem_go = mensagem_go.get_rect(center=(largura // 2, altura // 5))
+        retangulo_mensagem_vitoria1 = mensagem_vitoria1.get_rect(center=(largura // 2, altura // 3))
+        retangulo_mensagem_vitoria2 = mensagem_vitoria2.get_rect(center=(largura // 2, altura // 2))
+        retangulo_mensagem_pontuacao = mensagem_pontuacao.get_rect(center=(largura // 2, altura // 1.5))
+        tela.blit(mensagem_go, retangulo_mensagem_go)
+        tela.blit(mensagem_vitoria1, retangulo_mensagem_vitoria1)
+        tela.blit(mensagem_vitoria2, retangulo_mensagem_vitoria2)
+        tela.blit(mensagem_pontuacao, retangulo_mensagem_pontuacao)
         pygame.display.flip()
 
     pygame.display.flip()
