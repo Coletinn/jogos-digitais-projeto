@@ -189,11 +189,13 @@ while executando:
             elif botao_teste.collidepoint(event.pos):
                 next_level = True
 
-            elif next_level:  # If the next level is triggered
-                tela.fill((0, 0, 0))  # Fill the screen with black
+            elif next_level:
+                tela.fill((0, 0, 0))
                 pygame.display.flip()
 
-            if next_level:  # Assuming next_level is True during the helicopter scene
+            if next_level:
+                onda2.rect.x = largura // 0.8
+                onda3.rect.x = largura * 4 // 4
                 if helicoptero_sprite.rect.collidepoint(event.pos):
                     pontuacao += 100
                     display_victory_message = True
@@ -320,11 +322,12 @@ while executando:
         if next_level:
             som_vitoria.stop()
             tela.fill((0, 191, 255))
-            # Create sprites for CJ and Big Smoke
+            onda2 = Personagem("tsunami.png", largura // 0.8, altura // 1.3, escala=0.30)
+            onda3 = Personagem("tsunami.png", largura * 4 // 4, altura // 1.3, escala=0.20)
             cj_next_level = Personagem("cj.png", largura // 3, altura // 1.25, escala_cj, tipo="CJ")
             big_smoke_next_level = Personagem("bigsmoke.png", largura * 3 // 8, altura // 1.25, escala_bigsmoke, tipo='Big Smoke')
             helicoptero_sprite = Helicoptero("helicopter.png", largura // 9, altura // 1.2, escala=0.3)
-            personagens.add(helicoptero_sprite, cj_next_level, big_smoke_next_level)
+            personagens.add(helicoptero_sprite, cj_next_level, big_smoke_next_level, onda2, onda3)
             personagens.draw(tela)
             fonte_mensagem_proxnivel = pygame.font.SysFont("georgia", 25)
             mensagem_proxnivel = fonte_mensagem_proxnivel.render("Clique no helicóptero para subir e fugir do tsunami!", True, (255, 255, 0))
