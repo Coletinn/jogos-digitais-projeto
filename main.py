@@ -90,6 +90,15 @@ velocidade_onda = 0.6
 
 mostrar_texto_instrucoes = True
 
+class Casa(pygame.sprite.Sprite):
+    def __init__(self, imagem, x, y, escala=1):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.image.load(imagem)
+        self.original_image = self.image
+        self.image = pygame.transform.scale(self.image, (int(self.image.get_width() * escala), int(self.image.get_height() * escala)))
+        self.rect = self.image.get_rect()
+        self.rect.center = (x, y)
+
 class Helicoptero(pygame.sprite.Sprite):
     def __init__(self, imagem, x, y, escala=1):
         pygame.sprite.Sprite.__init__(self)
@@ -161,10 +170,11 @@ while executando:
 
                 personagens.add(sprite_areia)
 
+                oceano = Personagem("ocean.png", largura // 1.3, altura // 0.99, escala=0.08)
                 onda2 = Personagem("tsunami.png", largura // 0.8, altura // 1.3, escala=0.30)
                 onda3 = Personagem("tsunami.png", largura * 4 // 4, altura // 1.3, escala=0.20)
 
-                personagens.add(onda2, onda3)
+                personagens.add(oceano, onda2, onda3)
 
                 onda2.velocidade_horizontal = -velocidade_onda
                 onda3.velocidade_horizontal = -velocidade_onda
@@ -237,8 +247,7 @@ while executando:
 
         
     if next_level:
-        if keys[pygame.K_LEFT]:
-            helicoptero_sprite
+        pass
                         
 
     tela.blit(imagem_fundo, (0, 0))
@@ -320,14 +329,19 @@ while executando:
         tela.blit(texto_botao_teste, retangulo_botao_teste)
 
         if next_level:
+            personagens.empty()
             som_vitoria.stop()
             tela.fill((0, 191, 255))
-            onda2 = Personagem("tsunami.png", largura // 0.8, altura // 1.3, escala=0.30)
-            onda3 = Personagem("tsunami.png", largura * 4 // 4, altura // 1.3, escala=0.20)
-            cj_next_level = Personagem("cj.png", largura // 3, altura // 1.25, escala_cj, tipo="CJ")
-            big_smoke_next_level = Personagem("bigsmoke.png", largura * 3 // 8, altura // 1.25, escala_bigsmoke, tipo='Big Smoke')
-            helicoptero_sprite = Helicoptero("helicopter.png", largura // 9, altura // 1.2, escala=0.3)
-            personagens.add(helicoptero_sprite, cj_next_level, big_smoke_next_level, onda2, onda3)
+            #onda2 = Personagem("tsunami.png", largura // 0.8, altura // 1.3, escala=0.30)
+            #onda3 = Personagem("tsunami.png", largura * 4 // 4, altura // 1.3, escala=0.20)
+            sprite_casa1_nextlevel = Casa("house1.png", largura // 2, altura // 1.2, escala=0.4)
+            sprite_casa2_nextlevel = Casa("house2.png", largura // 10.5, altura // 1.17, escala=0.4)
+            sprite_grama_nextlevel = Personagem("grama.png", largura // 5, altura // 1.17, escala=1)
+            sprite_areia_nextlevel = Personagem("areia.png", largura // 1.3, altura // 1.1, escala=0.4)
+            cj_next_level = Personagem("cj.png", largura // 1.2, altura // 1.25, escala_cj, tipo="CJ")
+            big_smoke_next_level = Personagem("bigsmoke.png", largura * 6 // 8, altura // 1.25, escala_bigsmoke, tipo='Big Smoke')
+            helicoptero_sprite = Helicoptero("helicopter.png", largura // 3.5, altura // 1.17, escala=0.3)
+            personagens.add(sprite_casa1_nextlevel, sprite_casa2_nextlevel, sprite_grama_nextlevel, sprite_areia_nextlevel, helicoptero_sprite, cj_next_level, big_smoke_next_level)
             personagens.draw(tela)
             fonte_mensagem_proxnivel = pygame.font.SysFont("georgia", 25)
             mensagem_proxnivel = fonte_mensagem_proxnivel.render("Clique no helicóptero para subir e fugir do tsunami!", True, (255, 255, 0))
