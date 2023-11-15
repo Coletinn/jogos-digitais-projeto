@@ -1,3 +1,8 @@
+# Gustavo Coleto de Freitas     TIA: 32076541
+# João Vitor Teles Centrone     TIA: 30233125
+# João Paulo Bulhões Pequeno    TIA: 32089988
+# Santiago Ferrer Balcazar      TIA: 32035764
+
 import pygame
 import sys
 import time
