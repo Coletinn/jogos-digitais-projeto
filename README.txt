@@ -5,7 +5,7 @@ João Vitor Centrone             32033125
 João Paulo Bulhões              32089988
 Santiago Ferrer Balcázar        32035764
 
-#Como Jogar:
+### Como Jogar:
 Clique em "Jogar" para iniciar.
 Mova CJ e Big Smoke para locais seguros usando a seta para a esquerda.
 Evite o tsunami e resgate personagens para pontuar.
